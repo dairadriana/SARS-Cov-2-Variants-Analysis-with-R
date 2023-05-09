@@ -1,0 +1,307 @@
+---
+title: "Evidencia 2"
+author: "Daira Adriana Chavarría Rodríguez"
+date: "2/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Parte 1
+
+**Link del video** (Youtube): https://youtu.be/tkVtY79LopE
+
+# Parte 2
+
+#### Investigación
+
+Para la realización de la actividad se seleccionó la 2da opción, referente a la búsqueda de **secuencias de los coronavirus de otras especies, similares a SARS-CoV-2**.
+
+#### Librerías
+Se cargan las librerías necesarias para el correcto funcionamiento del código.
+
+```{r}
+library(ape)
+library(ggplot2)
+library(seqinr)
+library(ggtree)
+library(DECIPHER)
+# Para poder alinear las secuencias de todos los virus
+memory.limit(35000) 
+```
+
+### Secuencias encontradas:
+
+Las siguientes secuencias de nucleótidos fueron halladas en NCBI, y corresponden a diferentes especies animales como lo son:
+
+- Murciélagos
+- Pangolines
+- Ratas
+- Felinos
+- Hurones
+- Aves
+
+Entre otros.
+
+Asimismo, se incluye el número de acceso de cada una y su nombre abreviado como identificación.
+**La secuencia del SARS-Cov-2 se incluye igualmente**, a manera de referencia, y para poder comparar posteriormente.
+
+```{r}
+# Referencia
+SARSCov2 <- read.fasta("SARSCov2.fasta", set.attributes = FALSE)
+# Secuencias de otras especies (murciélago, hurón, felino...)
+MurineHepatitis <- read.fasta("MurineHepatitis.fasta", set.attributes = FALSE)
+PorcineEp <- read.fasta("PorcineEp.fasta", set.attributes = FALSE)
+BelugaC <- read.fasta("BelugaC.fasta", set.attributes = FALSE)
+RabbitC <- read.fasta("RabbitC.fasta", set.attributes = FALSE)
+MinkC <- read.fasta("Mink.fasta", set.attributes = FALSE)
+FerretC <- read.fasta("Ferret.fasta", set.attributes = FALSE)
+AvianB <- read.fasta("AvianB.fasta", set.attributes = FALSE)
+FelineP <- read.fasta("FelineP.fasta", set.attributes = FALSE)
+BovineC <- read.fasta("Bovine.fasta", set.attributes = FALSE)
+BatHKU4 <- read.fasta("BatHKU4.fasta", set.attributes = FALSE)
+BatHKU5 <- read.fasta("BatHKU5.fasta", set.attributes = FALSE)
+BatHKU9 <- read.fasta("BatHKU9.fasta", set.attributes = FALSE)
+BatHKU2 <- read.fasta("BatHKU2.fasta", set.attributes = FALSE)
+GooseC <- read.fasta("Goose.fasta", set.attributes = FALSE)
+ShrewC <- read.fasta("Shrew.fasta", set.attributes = FALSE)
+DuckC <- read.fasta("Duck.fasta", set.attributes = FALSE)
+HedgehogC <- read.fasta("Hedgehog.fasta", set.attributes = FALSE)
+RatC <- read.fasta("Rat.fasta", set.attributes = FALSE)
+TurkeyC <- read.fasta("Turkey.fasta", set.attributes = FALSE)
+BatHPBeta <- read.fasta("BatHp.fasta", set.attributes = FALSE)
+Pangolin <- read.fasta("Pangolin.fasta", set.attributes = FALSE)
+
+Nombres <- c("*SARS Cov2", "Murine hepatitis", "Porcine Diarrhea", 
+             "Beluga Whale", "Rabbit", "Mink", "Ferret", "Avian bronchitis",
+             "Feline Peritonitis", "Bovine", "Bat HKU4", "Bat HKU5", "Bat HKU9",
+             "Bat HKU2", "Goose", "Shrew", "Duck", "Hedgehog", "Rat", "Turkey",
+             "Bat HP Beta", "Pangolin")
+
+NamesAcc <- c("*SARS_Cov2", "Murine_hepatitis", "Porcine_Diarrhea", 
+             "Beluga_Whale_coronavirus", "Rabbit_coronavirus", "Mink_coronavirus",
+             "Ferret_coronavirus", "Avian_bronchitis", "Feline_Peritonitis", 
+             "Bovine_coronavirus", "Bat_HKU4", "Bat_HKU5", "Bat_HKU9",
+             "Bat_HKU2", "Goose_coronavirus", "Shrew_coronavirus", 
+             "Duck_coronavirus", "Hedgehog_coronavirus", "Rat_coronavirus", 
+             "Turkey_coronavirus", "Bat_HP_Beta", "Pangolin_coronavirus")
+
+Accessions <- c("NC_045512", "NC_048217", "NC_003436", "NC_010646", "NC_017083",
+                "NC_023760", "NC_030292", "NC_001451", "NC_002306", "NC_003045",
+                "NC_009019", "NC_009020", "NC_009021", "NC_009988", "NC_046965",
+                "NC_048211", "NC_048214", "NC_039207", "NC_032730", "NC_010800",
+                "NC_025217", "MT121216")
+
+fancyPrint <- function (sequences){
+  i <- 1
+  while (i <= length(sequences)){
+    print(paste("Variante", Variantes[i]," encontrada en", Countries[i], ":"))
+    print(head((sequences[[i]][[1]])))
+    print(tail((sequences[[i]][[1]])))
+    i <- i + 1
+  }
+}
+
+MySequences <- c(SARSCov2, MurineHepatitis, PorcineEp, BelugaC, RabbitC, MinkC, 
+                 FerretC, AvianB, FelineP, BovineC, BatHKU4, BatHKU5, BatHKU9, 
+                 BatHKU2, GooseC, ShrewC, DuckC, HedgehogC, RatC, TurkeyC, 
+                 BatHPBeta, Pangolin)
+```
+
+### Tamaño de las secuencias:
+
+Por medio de una función para obtener el tamaño de cada una de nuestras secuencias, así como de otra función para imprimirlas en un formato entendible/atractivo; se resuelve esta parte de la evidencia.
+Se verificó que el tamaño fuera el mismo que el declarado en NCBI para cada secuencia.
+
+```{r}
+getSize <- function(sequence){
+  return (length(sequence[[1]]))
+}
+fancySize <- function(sequences){
+  i <- 1
+  while (i <= length(sequences)){
+    print(paste("El tamaño del virus (coronavirus)", Nombres[i], "es de:", getSize(sequences[i])))
+    i<- i+1 
+  }
+}
+
+fancySize(MySequences)
+```
+
+## Gráficas:
+
+```{r, echo=FALSE}
+cantidadN <- function(sequence){
+  As <- 0
+  Cs <- 0
+  Gs <- 0
+  Ts <- 0
+  i <- 1
+  while (i <= getSize(sequence)){
+    if (sequence[[1]][i] == 'a'){ As <- As + 1}
+    if (sequence[[1]][i] == 'c'){ Cs <- Cs + 1}
+    if (sequence[[1]][i] == 'g'){ Gs <- Gs + 1}
+    if (sequence[[1]][i] == 't'){ Ts <- Ts + 1}
+    i <- i+1
+  }
+  nComp <- c(As, Cs, Gs, Ts)
+  return (nComp)
+}
+
+nucleotidos <- rep(c("Adenina", "Citosina", "Guanina", "Timina"), 22)
+
+NameFunc <- function(Names){
+  i <- 1
+  AllNames <- vector()
+  while (i <= length(Names)){
+    AllNames <- c(AllNames, rep(Names[i], 4))
+    i <- i + 1
+  }
+  return (AllNames)
+}
+
+MyNames <- NameFunc(Nombres)
+
+AllQ <- function(sequences){
+  i <- 1
+  AllQ <- vector()
+  while (i <= length(sequences)){
+    
+    AllQ <- c(AllQ, cantidadN(sequences[i]))
+    i <- i + 1
+  }
+  return (AllQ)
+}
+
+MyCant <- AllQ(MySequences)
+df2 <- data.frame(MyNames, nucleotidos, MyCant)
+ggplot(data = df2, aes(x = reorder(MyNames, MyCant), y = MyCant,
+                       fill = nucleotidos, label = paste(trunc(MyCant)))) +
+  labs(fill = "Nucleótidos") + geom_bar(stat="identity") + 
+  geom_text(size = 3, position = position_stack(vjust=0.5)) +
+  scale_fill_manual(values=c("darkturquoise", "deeppink", 
+                             "darkviolet", "goldenrod1")) +
+  ggtitle("Cantidad de nucleótidos presente\nen diferentes coronavirus") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20), 
+        axis.text = element_text(size = 7), 
+        axis.title = element_text(size = 15)) + coord_flip() +
+  labs(x = "Nombre del virus (coronavirus)", y = "Cantidad")
+
+ggsave("VirusSequences(A01274745).png", limitsize = FALSE, path = getwd())
+```
+
+*(Se verificó que no existieran nucleótidos desconocidos "N" en ninguna de las secuencias)*
+
+Se ordenan las secuencias de mayor a menor cantidad (total) de nucleótidos. Por ello podemos decir que la secuencia más larga pertenece al coronavirus relativo a la beluga (beluga whale), y la secuencia más corta pertenece al coronavirus relativo a la musaraña (shrew).
+
+A diferencia de la comparación hecha entre algunas *variantes de SARS-CoV-2* y el mismo virus, al comparar *diferentes tipos de coronavirus pertenecientes a varias especies de animales* vemos que existe una diferencia muy notable entre sí. Por ejemplo, son muy diferentes las secuencias del coronavirus de la musaraña y el coronavirus de la beluga.
+
+Sin embargo, existen algunos virus que se parecen más entre sí, como lo es el caso del conejo y el bovino. Sus secuencias tienen un total de nucleótidos muy similar, así como el porcentaje de cada uno de estos (Adenina, Guanina, Citosina, Timina).
+
+### Árbol filogenético:
+
+```{r, echo=FALSE}
+virus_sequences <- read.GenBank(Accessions)
+str(virus_sequences)
+attributes(virus_sequences)
+n <- names(virus_sequences)
+namesA <- attr(virus_sequences, "species")
+df <- data.frame(n, NamesAcc)
+write.dna(virus_sequences,  file ="virus_seqs.fasta", format = "fasta", append =
+            FALSE, nbcol = 6, colsep = " ", colw = 10)
+virus_seq_not_align <- readDNAStringSet("virus_seqs.fasta", format = "fasta")
+virus_seq_not_align
+virus_seq_not_align <- OrientNucleotides(virus_seq_not_align)
+virus_seq_align <- AlignSeqs(virus_seq_not_align)
+BrowseSeqs(virus_seq_align, highlight=0)
+writeXStringSet(virus_seq_align, file="virus_seq_align.fasta")
+virus_aligned <- read.alignment("virus_seq_align.fasta", format = "fasta")
+matriz_distancia <- dist.alignment(virus_aligned, matrix = "similarity")
+# Creación del árbol
+virus_tree <- nj(matriz_distancia)
+virus_tree <- ladderize(virus_tree)
+# Plot del árbol
+tr <- names(virus_sequences)
+df <- data.frame(label = tr, genus = NamesAcc)
+ggtree(virus_tree ) %<+% df +geom_tiplab(size = 3, aes(label=paste0(genus))) + 
+  geom_tippoint(color="#fc1d85", shape=16, size=2) + xlim(0,0.5) +
+  geom_nodepoint(color="#fc1d85", alpha=1/4, size=10)
+
+ggsave("ArbolFilogenetico(A01274745).png", limitsize = FALSE, path = getwd())
+```
+
+Podemos notar la distancia existente entre cada una de los coronavirus, siendo que el más cercano al SARS-CoV-2 (el más similar) es el **coronavirus del pangolín (Acceso: MT121216)**, siendo que ambos se derivan de un mismo nodo. Asimismo, el **betacoronavirus del murciélago (Bat_HP_Beta)** se deriva del mismo nodo que los ambos anteriormente mencionados, siendo que es más cercano a ellos que otros virus.
+
+## Zoonosis:
+
+Todo lo que se ha mencionado con anterioridad nos ayuda a entender el fenómeno de **zoonosis**.
+
+**¿Qué es la Zoonosis?**
+Es la transmisión de enfermedades infecciosas desde animales hacia el ser humano. Su inversa es la antropozoonosis, cuando el humano contagia a otros animales.
+
+A pesar de que existan múltiples teorías sobre el origen del COVID-19 (*haber sido creado en un laboratorio*), podemos respaldar con experimentos como el presente que el SARS-CoV-2 tuviera un **origen zoonico**, como el 70% de las infecciones emergentes de los últimos 40 años.
+
+En nuestro árbol filogenético notamos que el virus más parecido al SARS-CoV-2 pertenece al *pangolín*, lo que concuerda con las hipótesis (de origen científico) que se nos han planteado hasta el momento:
+
+*"[...] las investigaciones apuntan a que el animal era un murciélago que transmitió el virus a otro animal intermedio, con toda seguridad un pangolín [...] que lo transmitió hasta los humanos"* Peinado Lorca M. (2021)
+
+Dado que el betacoronavirus del murciélago (Bat_HP_Beta) es cercano a las secuencias del virus perteneciente al pangolín y al COVID-19, pero no tan cercano como estas últimas entre sí, podemos deducir que la zoonosis no fue directa, es decir que el murciélago en cuestión pudo transmitir el virus al pangolín, y el pangolín al humano. Esto concuerda nuevamente con las hipótesis más fiables.
+
+Otras teorías también afirman la posibilidad de que la zoonosis fuera directa hacia el humano (murciélago-humano). Esto es posible, aunque la hipótesis anteriormente mencionada resulta ser más posible.
+
+## Referencias:
+
+- WebMD (2021). "How Many Coronavirus Strains Are There?". Recuperado el 27 de abril del 2021 desde: https://www.webmd.com/lung/coronavirus-strains#1
+
+### Secuencias (NCBI)
+
+- NCBI (2020). "Murine hepatitis virus strain A59, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_048217
+
+- NCBI (2018). "Porcine epidemic diarrhea virus, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_003436
+
+- NCBI (2020). "Beluga Whale coronavirus SW1, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_010646
+
+- NCBI (2020). "Rabbit coronavirus HKU14, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_017083
+
+- NCBI (2018). "Mink coronavirus strain WD1127, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_023760
+
+- NCBI (2018). "Ferret coronavirus isolate FRCoV-NL-2010, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_030292
+
+- NCBI (2018). "Avian infectious bronchitis virus, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_001451
+
+- NCBI (2018). "Feline infectious peritonitis virus, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_002306
+
+- NCBI (2020). "Bovine coronavirus isolate BCoV-ENT, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_003045
+
+- NCBI (2020). "Tylonycteris bat coronavirus HKU4, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_009019
+
+- NCBI (2020). "Pipistrellus bat coronavirus HKU5, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_009020
+
+- NCBI (2020). "Rousettus bat coronavirus HKU9, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_009021
+
+- NCBI (2018). "Bat coronavirus HKU2, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_009988
+
+- NCBI (2020). "Canada goose coronavirus strain Cambridge_Bay_2017, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_046965
+
+- NCBI (2020). "Wencheng Sm shrew coronavirus isolate Xingguo-74 ORF1ab polyprotein, spike glycoprotein, envelope protein, membrane protein, and nucleocapsid protein genes, complete cds". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_048211
+
+- NCBI (2020). "Duck coronavirus isolate DK/GD/27/2014, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_048214
+
+- NCBI (2020). "Betacoronavirus Erinaceus/VMC/DEU/2012 isolate ErinaceusCoV/2012-174/GER/2012, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_039207
+
+- NCBI (2020). "Lucheng Rn rat coronavirus isolate Lucheng-19, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_032730
+
+- NCBI (2020). "Turkey coronavirus, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_010800
+
+- NCBI (2020). "Bat Hp-betacoronavirus/Zhejiang2013, complete genome". Recuperado el 27 de abril del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/NC_025217
+
+- NCBI (2020). "Pangolin coronavirus isolate MP789, complete genome". Recuperado el 2 de mayo del 2021 desde: https://www.ncbi.nlm.nih.gov/nuccore/MT121216
+### Zoonosis
+
+- OMS (s.f.). "Zoonosis y Medio Ambiente". Recuperado el 1 de mayo del 2021 desde: https://www.who.int/foodsafety/areas_work/zoonose/es/#:~:text=Las%20enfermedades%20zoonóticas%20son%20un,animales%20a%20los%20seres%20humanos.
+
+- Sabatés R. (2017). "Zoonosis - Definición y ejemplos". Recuperado el 2 de mayo del 2021 desde: https://www.expertoanimal.com/zoonosis-definicion-y-ejemplos-21846.html
+
+- Peinado Lorca M. (2021). "Murciélagos y pangolines: el coronavirus es una zoonosis, no un producto de laboratorio". Recuperado el 2 de mayo del 2021 desde: https://theconversation.com/murcielagos-y-pangolines-el-coronavirus-es-una-zoonosis-no-un-producto-de-laboratorio-135753
+
